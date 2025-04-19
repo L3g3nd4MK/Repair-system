@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="notifications.css">
+    <title>Admin Notifications</title>
+</head>
+<body>
+    <div class="topBar">
+        <div class="logo">MATRIX</div>
+        <div class="userName">Admin User</div>
+    </div>
+    <div class="container">
+        <div class="sideBar">
+            <ul>
+                <li><a href="usermanagement.html">User Management</a></li>
+                <li><a href="repairrequest.html">Repair Request</a></li>
+                <li><a href="pickuprequest.html">Pickup Request</a></li>
+                <li><a href="deliveryrequest.html">Delivery Request</a></li>
+                <li class="active"><a href="notifications.html">Messages</a></li>
+                <li><a href="login.html">Logout</a></li>
+            </ul>
+        </div>
+
+        <div class="mainContent">
+            <h2>SEND MESSAGES</h2>
+
+            <div class="searchBar">
+                <input type="text" placeholder="Search for a user" id="userSearch" oninput="filterUsers()">
+            </div>
+
+            <div class="container2">
+                <div>
+                    <form id="notificationForm">
+                        <select id="users" name="users" size="6" onchange="selectUser()">
+                            
+                        </select>
+                    </form>
+                </div>
+
+                <div class="chatBox">
+                    <div class="messageDisplay" id="messageDisplay">
+                        
+                    </div>
+                    <div class="messageInputArea">
+                        <input type="text" id="messageContent" placeholder="Type your message...">
+                        <button type="button" class="sendBtn" onclick="sendMessage()">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.20.0/firebase-app.js';
+        import { getFirestore, collection, getDocs, addDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/9.20.0/firebase-firestore.js';
+        import { Timestamp } from 'https://www.gstatic.com/firebasejs/9.20.0/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDA9a4o0NvjPOWta_57uXBXoooVv64_TW8",
+            authDomain: "ditgroup-29bfb.firebaseapp.com",
+            projectId: "ditgroup-29bfb",
+            storageBucket: "ditgroup-29bfb.appspot.com",
+            messagingSenderId: "895206997397",
+            appId: "1:895206997397:web:fe63342683db55a8398a9c",
+            measurementId: "G-EFM641GYFE"
+        };
+    
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+    
+        const messages = {};
+        let selectedUser = null;
+    
+        //loading users dynamically from Firestore
+        async function loadUsers() {
+            const userSelect = document.getElementById('users');
+            const usersSnapshot = await getDocs(collection(db, 'chats'));
+    
+            usersSnapshot.forEach(doc => {
+                const data = doc.data();
+                const option = document.createElement('option');
+                option.value = data.uid;  // User ID
+                option.textContent = data.email;  // User email
+                userSelect.appendChild(option);
+            });
+            console.log('Users loaded:', usersSnapshot.size);
+        }
+    
+        // selecting a user and displaying their messages
+        window.selectUser = async function() { 
+        const userSelect = document.getElementById('users');
+        selectedUser = userSelect.value;
+
+    console.log('Selected user:', selectedUser);
+    
+    // Clearing messages and fetch new ones
+    messages[selectedUser] = [];  
+    displayMessages();  
+    await fetchMessages(); 
+};
+
+    
+        // fetching messages from Firestore
+        async function fetchMessages() {
+    if (!selectedUser) return;
+
+    const messagesRef = collection(db, `chat_rooms/${selectedUser}_aqQIfqppFDeIejV4MK76095cTla2/messages`);
+    console.log('Fetching messages for:', selectedUser);
+    
+    onSnapshot(messagesRef, (querySnapshot) => {
+        messages[selectedUser] = [];  
+        console.log('Messages fetched:');
+        
+        // Log the number of documents in the snapshot
+        console.log(`Number of documents in snapshot: ${querySnapshot.size}`);
+        
+        querySnapshot.forEach(doc => {
+            messages[selectedUser].push(doc.data());
+            console.log('Message:', doc.data()); 
+        });
+        
+        console.log(`Number of messages for ${selectedUser}:`, messages[selectedUser].length);
+        
+        // Display ing the messages after fetching it
+        displayMessages();
+    }, (error) => {
+        console.error('Error fetching messages:', error); 
+    });
+}
+
+
+function displayMessages() {
+    const messageDisplay = document.getElementById('messageDisplay');
+    messageDisplay.innerHTML = '';
+
+    if (!messages[selectedUser] || messages[selectedUser].length === 0) {
+        messageDisplay.innerText = 'No messages found.';
+        return;
+    }
+
+    // Sort messages by timestamp (Firestore Timestamps have a `toDate()` method)
+    messages[selectedUser].sort((a, b) => a.timestamp.toDate() - b.timestamp.toDate());
+
+    // Loop through the sorted messages of the selected user and display them
+    messages[selectedUser].forEach(msg => {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add(msg.senderID === "2r46onkBm2QKeOERvUCyAoDC7nv2" ? 'adminMessage' : 'userMessage');
+        messageElement.innerText = ` ${msg.message}`;
+        messageDisplay.appendChild(messageElement);
+    });
+
+    // Scroll to the bottom of the message display after adding the messages
+    messageDisplay.scrollTop = messageDisplay.scrollHeight;
+}
+
+
+
+    
+        // Function to send a message
+        window.sendMessage = async function() { 
+            const messageContent = document.getElementById('messageContent').value;
+    
+            if (selectedUser && messageContent.trim() !== '') {
+                const messageData = {
+                    senderID: "2r46onkBm2QKeOERvUCyAoDC7nv2",  // Admin's UID
+                    senderEmail: "admin@example.com",  // Admin's email
+                    receiverID: selectedUser,
+                    message: messageContent,
+                    timestamp: Timestamp.fromDate(new Date())
+                };
+    
+                // Adding the message to Firestore
+                await addDoc(collection(db, `chat_rooms/${selectedUser}_aqQIfqppFDeIejV4MK76095cTla2/messages`), messageData);
+                console.log('Message sent:', messageData); 
+    
+                document.getElementById('messageContent').value = '';
+            }
+        };
+
+        
+    
+        // Load users when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUsers();
+        });
+    </script>
+    
+</body>
+</html>

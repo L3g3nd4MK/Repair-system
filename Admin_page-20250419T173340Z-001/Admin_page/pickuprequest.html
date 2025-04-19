@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="pickuprequest.css">
+</head>
+<body>
+    <div class="topBar">
+        <div class="logo">MATRIX</div>
+        <div class="userName">Admin User</div>
+    </div>
+
+    <div class="container">
+        <div class="sideBar">
+            <ul>
+                <li><a href="usermanagement.html">User Management</a></li>
+                <li><a href="repairrequest.html">Repair Request</a></li>
+                <li class="active"><a href="pickuprequest.html">Pickup Request</a></li>
+                <li><a href="deliveryrequest.html">Delivery Request</a></li>
+                <li><a href="notifications.html">Messages</a></li>
+                <li><a href="login.html">Logout</a></li>
+            </ul>
+        </div>
+
+        <div class="mainContent">
+            <div class="search-filter">
+                <input type="text" id="search-bar" placeholder="Search by user">
+                <select id="filter-bar">
+                    <option value="">Filter by status</option>
+                    <option value="pending">Pending</option>
+                    <option value="completed">Completed</option>
+                </select>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Repair ID</th>
+                            <th>Preferred Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pickup-table">
+                        
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination">
+                <button>Prev</button>
+                <button>1</button>
+                <button>2</button>
+                <button>Next</button>
+            </div>
+
+            <div id="pickup-details">
+                <h2>Pickup Details for <span id="customer-name"></span></h2>
+                <table>
+                    <tr>
+                        <th>Repair ID</th>
+                        <td id="detail-bag-id"></td>
+                    </tr>
+                    <tr>
+                        <th>Pickup Address</th>
+                        <td id="detail-address"></td>
+                    </tr>
+                    <tr>
+                        <th>Preferred Date</th>
+                        <td id="detail-date"></td>
+                    </tr>
+                    <tr>
+                        <th>Status</th>
+                        <td id="detail-time"></td>
+                    </tr>
+                    <tr>
+                        <th>Special Instructions</th>
+                        <td id="detail-instructions"></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>
+        function openSetStatusForm(repairID, status) {
+    const url = `form2.html?requestID=${encodeURIComponent(repairID)}`;
+    window.open(url, '_blank');
+}
+
+    </script>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.20.0/firebase-app.js';
+        import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.20.0/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDA9a4o0NvjPOWta_57uXBXoooVv64_TW8",
+            authDomain: "ditgroup-29bfb.firebaseapp.com",
+            projectId: "ditgroup-29bfb",
+            storageBucket: "ditgroup-29bfb.appspot.com",
+            messagingSenderId: "895206997397",
+            appId: "1:895206997397:web:fe63342683db55a8398a9c",
+            measurementId: "G-EFM641GYFE"
+        };
+
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // fetching pickup requests from Firestore
+        async function fetchPickups() {
+            try {
+                const pickupTable = document.getElementById("pickup-table");
+                const querySnapshot = await getDocs(collection(db, "pickups"));
+                pickupTable.innerHTML = ""; 
+
+                querySnapshot.forEach((doc) => {
+                    const pickupsData = doc.data();
+                    const firstName = pickupsData.customerName || "N/A";
+                    const surname = pickupsData.customerSurname || "N/A";
+                    const repairID = doc.id || "N/A";
+                    const fullname = pickupsData.fullName || "N/A"
+                    const preferredDate = pickupsData.preferredDate || "N/A";
+                    const preferredTime = pickupsData.preferredTime || "N/A";
+                    const status = pickupsData.status || "N/A";
+                    const address = pickupsData.pickupAddress || "N/A";
+                    const instructions = pickupsData.specialInstruction || "N/A";
+
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${fullname}</td>
+                        <td>${repairID}</td>
+                        <td>${preferredDate}</td>
+                        <td>${status}</td>
+                        <td class="actions">
+                            <button onclick="viewDetails('${fullname}', '${repairID}', '${address}', '${preferredDate}', '${status}', '${instructions}')">View</button>
+                            <button onclick="openSetStatusForm('${repairID}', '${status}')">Set Status</button>
+                        </td>
+                    `;
+                    pickupTable.appendChild(row);
+                });
+            } catch (error) {
+                console.error("Error fetching pickup requests:", error);
+            }
+        }
+
+
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchPickups();
+        });
+    </script>
+    <script>
+        function viewDetails(userName, bagId, address, date, time, instructions) {
+            console.log("Viewing details for:", userName, bagId, address, date, time, instructions);
+            
+            
+            document.getElementById("customer-name").innerText = userName;
+            document.getElementById("detail-bag-id").innerText = bagId;
+            document.getElementById("detail-address").innerText = address;
+            document.getElementById("detail-date").innerText = date;
+            document.getElementById("detail-time").innerText = time;
+            document.getElementById("detail-instructions").innerText = instructions;
+    
+            // Show the pickup details section
+            document.getElementById("pickup-details").style.display = "block";
+        }
+    </script>
+    
+</body>
+</html>

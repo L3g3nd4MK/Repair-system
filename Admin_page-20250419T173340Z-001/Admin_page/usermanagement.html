@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management</title>
+    <link rel="stylesheet" href="usermanagement.css">
+</head>
+<body>
+    <div class="topBar">
+        <div class="logo">MATRIX</div>
+        <div class="userName">Admin User</div>
+    </div>
+    <div class="container">
+        <div class="sideBar">
+            <ul>
+                <li class="active"><a href="usermanagement.html">User Management</a></li>
+                <li><a href="repairrequest.html">Repair Request</a></li>
+                <li><a href="pickuprequest.html">Pickup Request</a></li>
+                <li><a href="deliveryrequest.html">Delivery Request</a></li>
+                <li><a href="notifications.html">Messages</a></li>
+                <li><a href="login.html">Logout</a></li>
+            </ul>
+        </div>
+        <div class="mainContent">
+            <div class="search-bar">
+                <input type="text" placeholder="Search Name/Email/UserID" id="searchInput" oninput="filterUsers()">
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                       <th>User ID</th>
+                       <th>Name</th>
+                       <th>Email</th>
+                       <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    
+                </tbody>
+            </table>
+            <div class="pagination">
+                <button>Prev</button>
+                <button>1</button>
+                <button>2</button>
+                <button>Next</button>
+            </div>
+            <div id="userModal" class="modal">
+                <div class="modal-content">
+                    <span class="close" onclick="closeModal()">&times;</span>
+                    
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openModal(userId, name, email, phoneNumber) {
+            const modal = document.getElementById("userModal");
+            const modalContent = modal.querySelector(".modal-content");
+    
+            modalContent.innerHTML = `
+                <span class="close" onclick="closeModal()">&times;</span>
+                <h2>User Details</h2>
+                <p><strong>Name:</strong> ${name}</p>
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>Phone Number:</strong> ${phoneNumber}</p>
+            `;
+    
+            modal.style.display = "flex";
+        }
+    
+        // Function to close the modal
+        function closeModal() {
+            const modal = document.getElementById("userModal");
+            modal.style.display = "none";
+        }
+    </script>
+    
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.20.0/firebase-app.js';
+        import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.20.0/firebase-firestore.js';
+    
+        const firebaseConfig = {
+            apiKey: "AIzaSyDA9a4o0NvjPOWta_57uXBXoooVv64_TW8",
+            authDomain: "ditgroup-29bfb.firebaseapp.com",
+            projectId: "ditgroup-29bfb",
+            storageBucket: "ditgroup-29bfb.appspot.com",
+            messagingSenderId: "895206997397",
+            appId: "1:895206997397:web:fe63342683db55a8398a9c",
+            measurementId: "G-EFM641GYFE"
+        };
+    
+        // Initializing the Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        const userTableBody = document.getElementById("userTableBody");
+        
+        // Function for fetching users from Firestore
+        async function fetchUsers() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "users"));
+                userTableBody.innerHTML = ""; 
+    
+                querySnapshot.forEach((doc) => {
+                    // N/A is the default value if nothing is available
+                    const userData = doc.data();
+                    const userId = doc.id;
+                    const name = userData.fullName || "N/A";
+                    const email = userData.email || "N/A"; 
+                    const phoneNumber = userData.phone || "N/A";
+    
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${userId}</td>
+                        <td>${name}</td>
+                        <td>${email}</td>
+                        <td><button onclick="openModal('${userId}', '${name}', '${email}', '${phoneNumber}')">View</button></td>
+                    `;
+                    userTableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error("Error fetching users: ", error);
+            }
+        }
+    
+        // Calls fetchUsers on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchUsers();
+        });
+    </script>
+    
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="form.css">
+</head>
+<body>
+    <div class="form-container">
+        <h2>Set Status</h2>
+        <p id="requestIdDisplay"></p> 
+        <form id="statusForm">
+            <label>
+                <input type="radio" name="decision" value="Pickup Completed" required> Pickup Completed
+            </label>
+            <label>
+                <input type="radio" name="decision" value="Repair Completed" required> Repair Completed
+            </label>
+
+            
+
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.20.0/firebase-app.js';
+        import { getFirestore, doc, updateDoc } from 'https://www.gstatic.com/firebasejs/9.20.0/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDA9a4o0NvjPOWta_57uXBXoooVv64_TW8",
+            authDomain: "ditgroup-29bfb.firebaseapp.com",
+            projectId: "ditgroup-29bfb",
+            storageBucket: "ditgroup-29bfb.appspot.com",
+            messagingSenderId: "895206997397",
+            appId: "1:895206997397:web:fe63342683db55a8398a9c",
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const approvalForm = document.getElementById('statusForm');
+
+        // Function to get URL parameters
+        function getQueryParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // Get the request ID from the URL and display it
+        const requestId = getQueryParameter('requestID');
+        document.getElementById('requestIdDisplay').textContent = `ID: ${requestId}`;
+
+
+        // Form submission
+        approvalForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const decision = approvalForm.decision.value;
+            const docRef = doc(db, 'pickups', requestId); 
+            const docRef2 = doc(db, 'repair_request', requestId);
+
+            try {
+                if (decision === 'Pickup Completed') {
+                    
+
+                    await updateDoc(docRef, {
+                        status: 'Pickup Complete',
+                    });
+
+                    await updateDoc(docRef2, {
+                        status: 'Pickup Complete',
+                    });
+
+                    alert('Status updated successfully!');
+                } else if (decision === 'Repair Completed') {
+                    
+                    await updateDoc(docRef, {
+                        status: 'Repair Complete',
+                        
+                    });
+
+                    await updateDoc(docRef2, {
+                        status: 'Repair Complete',
+                        
+                    });
+
+                    alert('Status updated successfully!');
+                }
+
+                window.location.href = 'pickuprequest.html';
+            } catch (error) {
+                console.error('Error updating request:', error);
+                alert('There was an error updating the request. Please try again.');
+            }
+        });
+    </script>
+</body>
+</html>

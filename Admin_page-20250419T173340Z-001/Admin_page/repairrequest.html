@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="repairrequest.css">
+    </head>
+    <body>
+        <div class="topBar">
+            <div class="logo">MATRIX</div>
+            <div class="userName">Admin User</div>
+        </div>
+        <div class="container">
+            <div class="sideBar">
+                <ul>
+                    <li><a href="usermanagement.html">User Management</a></li>
+                    <li class="active"><a href="repairrequest.html">Repair Request</a></li>
+                    <li><a href="pickuprequest.html">Pickup Request</a></li>
+                    <li><a href="deliveryrequest.html">Delivery Request</a></li>
+                    <li><a href="notifications.html">Messages</a></li>
+                    <li><a href="login.html">Logout</a></li>
+                    </ul>
+            </div>
+            <div class="mainContent">
+                <div class="search-filter">
+                    <input type="text" id="search-bar" placeholder="Search request">
+                    <select id="filter-bar">
+                        <option value="">Filter by status</option>
+                        <option value="pending">Pending</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                    
+                </div>
+                
+                
+                <table class="requests-table">
+                    <thead>
+                      <tr>
+                        <th>Request ID</th>
+                        <th>User</th>
+                        <th>Luggage</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="userTableBody">
+                      
+                      
+                    </tbody>
+                  </table>
+
+                   <div class="pagination">
+                    <button>Prev</button>
+                    <button>1</button>
+                    <button>2</button>
+                    <button>Next</button>
+                  </div>
+
+                  <div class="modal" id="modal">
+                    <div class="modal-content">
+                      <span class="close" onclick="closeModal()">&times;</span>
+                      
+                      
+                    </div>
+                  </div>
+
+                  <div class="image-modal" id="imageModal">
+                    <span class="close" onclick="closeImageModal()">&times;</span>
+                    <img class="modal-image" id="modalImage" src="" alt="Luggage Image">
+
+
+                </div>
+
+                  
+
+            </div>
+        </div>
+        <script>
+
+          function openEstimateForm(requestID) {
+             const url = `form.html?requestID=${encodeURIComponent(requestID)}`;
+             window.open(url, '_blank');
+            }
+
+          
+        
+          function openModal(id,luggageType, brand, description, status, requestReceived, warranty, estimateCost, element) {
+              const modal = document.getElementById("modal");
+              const userModal = document.querySelector(".modal-content");
+
+              const images = JSON.parse(element.getAttribute('data-images')) || [];
+              
+      
+              userModal.innerHTML = `
+                  <span class="close" onclick="closeModal()">&times;</span>
+                  <h2>Luggage Info</h2>
+                  <p><strong>ID:</strong> ${id}</p>
+                  <p><strong>Type:</strong> ${luggageType}</p>
+                  <p><strong>Brand:</strong> ${brand}</p>
+                  <p><strong>Description:</strong> ${description}</p>
+                  <p><strong>Status:</strong> ${status}</p>
+                  <p><strong>Warranted?:</strong> ${warranty}</p>
+
+                  <h2>Uploaded Photos</h2>
+                  <div id="uploaded-photos">
+                    ${images.length ? images.map(img => `<img src="${img}" alt="Uploaded Image" class="clickable-image" onclick="openImageModal('${img}')" style="width: 100px; height: auto; margin: 5px; cursor: pointer;">`).join('') : '<p>No images available</p>'}
+                  </div>
+
+                  <h2>Cost to Repair</h2>
+                  <p><strong>Estimated Cost:</strong> ${estimateCost}</p>  
+      
+              `;
+      
+              modal.style.display = "flex"; 
+          }
+      
+          function closeModal() {
+              const modal = document.getElementById("modal");
+              modal.style.display = "none"; 
+          }
+
+          function openImageModal(imageSrc) {
+             const imageModal = document.getElementById("imageModal");
+             const modalImage = document.getElementById("modalImage");
+             modalImage.src = imageSrc;
+             imageModal.style.display = "flex";
+          }
+
+          function closeImageModal() {
+             const imageModal = document.getElementById("imageModal");
+             imageModal.style.display = "none";
+          }
+      </script>
+      
+
+        <script type="module">
+          import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.20.0/firebase-app.js';
+          import { getFirestore, collection, getDocs, doc, updateDoc } from 'https://www.gstatic.com/firebasejs/9.20.0/firebase-firestore.js';
+
+        
+    
+        const firebaseConfig = {
+            apiKey: "AIzaSyDA9a4o0NvjPOWta_57uXBXoooVv64_TW8",
+            authDomain: "ditgroup-29bfb.firebaseapp.com",
+            projectId: "ditgroup-29bfb",
+            storageBucket: "ditgroup-29bfb.appspot.com",
+            messagingSenderId: "895206997397",
+            appId: "1:895206997397:web:fe63342683db55a8398a9c",
+            measurementId: "G-EFM641GYFE"
+        };
+    
+        // Initializing the Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let currentRequestId = "";
+        
+        const userTableBody = document.getElementById("userTableBody");
+        
+        // fetching users from Firestore
+        async function fetchUsers() {
+            try {
+              const luggageTypeMap = {
+                   '1': 'Suitcase',
+                   '2': 'Backpack',
+                   '3': 'Garment Bag',
+                   '4': 'Carry-On Bag',
+                   '5': 'Rolling Luggage',
+                   '6': 'Briefcase',
+                   '7': 'Travel Organizer',
+                   '8': 'Hard Shell Luggage'
+              };
+
+              const querySnapshot = await getDocs(collection(db, "repair_request"));
+                userTableBody.innerHTML = "";
+
+                querySnapshot.forEach((doc) => {
+                  const repairrequestData = doc.data();
+                  const id = doc.id; 
+                  const requestID = repairrequestData.repairId || 'N/A';
+                  const fullName = repairrequestData.customerFullName || "N/A";
+                  const firstName = repairrequestData.customerName || "N/A";
+                  const surname = repairrequestData.customerSurname || "N/A";
+                  const luggageTypeId = repairrequestData.typeOfLuggage || "N/A";
+                  const luggageType = luggageTypeMap[luggageTypeId] || "N/A"; 
+                  const status = repairrequestData.status || "N/A";
+                  const brand = repairrequestData.brand || "N/A";
+                  const description = repairrequestData.description || "N/A";
+                  const requestReceived = repairrequestData.date || "N/A"
+                  const warranty = repairrequestData.under_warranty || "N/A";
+                  const estimateCost = repairrequestData.fee || "N/A"
+
+                  const images = repairrequestData.images || [];
+                  
+
+
+                  const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${requestID}</td>
+                        <td>${fullName}</td>
+                        <td>${luggageType}</td>
+                        <td>${status}</td>
+                        <td>
+                            <button 
+                             onclick="openModal('${id}','${luggageType}', '${brand}', '${description}', '${status}', '${requestReceived}', '${warranty}', '${estimateCost}', this)"
+                             data-images='${JSON.stringify(images)}'>View</button>
+                            <button class="estimate-btn" onclick="openEstimateForm('${id}')">Approve or disapprove</button>
+
+                        
+                        </td>
+                    `;
+                    userTableBody.appendChild(row);
+                })
+
+            } catch(error){
+
+            }
+
+          }
+
+          document.addEventListener('DOMContentLoaded', function() {
+            fetchUsers();
+        });
+              
+
+        </script>
+        
+    </body>
+</html>

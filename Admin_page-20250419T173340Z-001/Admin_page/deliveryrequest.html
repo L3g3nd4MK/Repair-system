@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="deliveryrequest.css">
+</head>
+<body>
+    <div class="topBar">
+        <div class="logo">MATRIX</div>
+        <div class="userName">Admin User</div>
+    </div>
+
+    <div class="container">
+        <div class="sideBar">
+            <ul>
+                <li><a href="usermanagement.html">User Management</a></li>
+                <li><a href="repairrequest.html">Repair Request</a></li>
+                <li><a href="pickuprequest.html">Pickup Request</a></li>
+                <li class="active"><a href="deliveryrequest.html">Delivery Request</a></li>
+                <li><a href="notifications.html">Messages</a></li>
+                <li><a href="login.html">Logout</a></li>
+            </ul>
+        </div>
+
+        <div class="mainContent">
+            <div class="search-filter">
+                <input type="text" id="search-bar" placeholder="Search by user">
+                <select id="filter-bar">
+                    <option value="">Filter by status</option>
+                    <option value="Scheduled for Delivery">Scheduled for Delivery</option>
+                    <option value="Delivered">Delivered</option>
+                </select>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Repair ID</th>
+                            <th>Date Requested</th>
+                            <th>Preferred Delivery Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="delivery-table">
+                        
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination">
+                <button>Prev</button>
+                <button>1</button>
+                <button>2</button>
+                <button>Next</button>
+            </div>
+
+            <div id="pickup-details" style="display: none;">
+                <h2>Delivery Details: <span id="customer-name"></span></h2>
+                <table>
+                    <tr>
+                        <th>Repair ID</th>
+                        <td id="detail-bag-id"></td>
+                    </tr>
+                    <tr>
+                        <th>Delivery Address</th>
+                        <td id="detail-address"></td>
+                    </tr>
+                    <tr>
+                        <th>Preferred Date</th>
+                        <td id="detail-date"></td>
+                    </tr>
+                    <tr>
+                        <th>Status</th>
+                        <td id="detail-instructions"></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openSetStatusForm(repairID, status) {
+    const url = `form3.html?requestID=${encodeURIComponent(repairID)}`;
+    window.open(url, '_blank');
+}
+
+    </script>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.20.0/firebase-app.js';
+        import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.20.0/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDA9a4o0NvjPOWta_57uXBXoooVv64_TW8",
+            authDomain: "ditgroup-29bfb.firebaseapp.com",
+            projectId: "ditgroup-29bfb",
+            storageBucket: "ditgroup-29bfb.appspot.com",
+            messagingSenderId: "895206997397",
+            appId: "1:895206997397:web:fe63342683db55a8398a9c",
+            measurementId: "G-EFM641GYFE"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        async function fetchDeliveries() {
+            try {
+                const deliveryTable = document.getElementById("delivery-table");
+                const querySnapshot = await getDocs(collection(db, "deliveries"));
+                deliveryTable.innerHTML = ""; 
+
+                querySnapshot.forEach((doc) => {
+                    const deliveryData = doc.data();
+                    
+                    const repairID = doc.id || "N/A";
+                    const dateRequested = deliveryData.delivery_request_date || "N/A";
+                    const preferredDate = deliveryData.preferredDate || "N/A";
+                    const address = deliveryData.deliveryAddress || "N/A";
+                    const instructions = deliveryData.specialInstruction || "N/A";
+                    const staus = deliveryData.status || "N/A";
+
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${repairID}</td>
+                        <td>${dateRequested}</td>
+                        <td>${preferredDate}</td>
+                        <td>${staus}</td>
+                        <td class="actions">
+                            <button onclick="viewDetails('${repairID}', '${address}', '${preferredDate}','${staus}', '${instructions}')">View</button>
+                            <button onclick="openSetStatusForm('${repairID}', '${status}')">Set Status</button>
+                        </td>
+                    `;
+                    deliveryTable.appendChild(row);
+                });
+            } catch (error) {
+                console.error("Error fetching delivery requests:", error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchDeliveries();
+        });
+
+    </script>
+    <script>
+        function viewDetails(repairID, address, date, instructions) {
+            document.getElementById("detail-bag-id").innerText = repairID;
+            document.getElementById("detail-address").innerText = address;
+            document.getElementById("detail-date").innerText = date;
+            document.getElementById("detail-instructions").innerText = instructions;
+
+            document.getElementById("pickup-details").style.display = "block";
+        }
+    </script>
+</body>
+</html>
+
